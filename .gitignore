@@ -1,5 +1,5 @@
-# for my env setting
-.myenv.sh
+# for my sensitive env settings
+.*.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

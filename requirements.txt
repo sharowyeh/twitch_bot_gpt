@@ -1,1 +1,2 @@
 twitchio==2.5.0
+openai==0.26.5
