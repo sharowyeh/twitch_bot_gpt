@@ -12,15 +12,86 @@ class GPTChat(object):
         self.temperature = 0.5
         self.token_length = 100
         self.max_length = 200
+        # we need to let sentence as simple as passible during the twitch chatting
+        self.pre_msgs = [
+            {"role": "system", "content": "brief reply in 2 or 3 sentences"}
+        ]
+        # full chatting backlogs for gpt engine 3.5
+        self.all_msgs = self.pre_msgs
     
     def setTemp(self, temperature):
-        logger.debug(f"temp assign {temperature}")
+        logger.debug(f"temper={temperature}")
         if 0.0 <= temperature <= 1.0:
             self.temperature = temperature
         else:
             self.temperature = 0.5 
 
+    def setCharacteristic(self, text):
+        """For gpt engine 3.5, set assistant working styles"""
+        logger.debug(f"assistant={text}")
+        if not text:
+            return
+        if len(self.pre_msgs) == 1:
+            self.pre_msgs.append({"role": "assistant", "content": text})
+        else:
+            self.all_msgs[1]["content"] = text
+        #TODO: should we just make a completion see what we got first?
+        # re-assign to chatting backlogs
+        self.all_msgs = self.pre_msgs
+
+    def chatCompletion(self, text):
+        resp_length = self.max_length
+        # given history backlogs including pre-messages for roles of system and assistant
+        msgs = self.all_msgs
+        # build a message structure for chat completion API
+        if text:
+            msg = {"role": "user", "content": text}
+            msgs.append(msg)
+        #logger.debug(msgs) # will be very long during chatting
+        resp = openai.ChatCompletion.create(
+            model = "gpt-3.5-turbo",
+            messages = msgs,
+            temperature = self.temperature,
+            max_tokens = resp_length,
+            #stop = ["\r", "\n", "\r\n"]
+        )
+
+        # check out the response format [link](https://platform.openai.com/docs/api-reference/chat/create)
+        reply_text = ""
+        logger.debug(resp)
+        if not hasattr(resp, 'choices') or len(resp.choices) == 0 or not resp.choices[0].message:
+            reply_text = "I got no response"
+            return reply_text
+        if not resp.choices[0].message.role or not resp.choices[0].message.content or resp.choices[0].message.role != "assistant":
+            reply_text = "I got err response"
+            return reply_text
+        if not resp.choices[0].finish_reason:
+            reply_text = "I got err response"
+            return reply_text
+        
+        logger.debug(f"choices: {resp.choices[0].message.content}")
+
+        #TODO: need squash messages avoid huge backlogs?
+        # update user and response content to message backlogs
+        if text:
+            self.all_msgs.append(msg)
+        self.all_msgs.append(resp.choices[0].message)
+        
+        #TODO: usually exceed maximum twitch limitation(500 chars)
+        # recursive call while finish_reason is length
+        if resp.choices[0].finish_reason == "length":
+            logger.debug("Response not finished, retrieve again")
+            self.chatCompletion(None)
+        # assume finish_reason == "stop", backward check contents from role assistant
+        for r in reversed(self.all_msgs):
+            if r["role"] != "assistant":
+                break
+            reply_text = r["content"].strip() + reply_text
+        logger.debug(f"reply: {reply_text}")
+        return reply_text[0:400] # maximum 500 for twitch
+
     def completion(self, text):
+        """text completion using gpt 3 engine"""
         # twitch chat is not fit for long text, restrict reponse in 1 or 2 sentences
         text = text + ",reply in 1 or 2 sentences" #TODO: should language specific?
         
