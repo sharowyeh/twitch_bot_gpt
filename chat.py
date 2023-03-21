@@ -14,7 +14,7 @@ class GPTChat(object):
         self.max_length = 200
         # we need to let sentence as simple as passible during the twitch chatting
         self.pre_msgs = [
-            {"role": "system", "content": "brief reply in 2 or 3 sentences"}
+            {"role": "system", "content": "always brief reply in 2 sentences"}
         ]
         # full chatting backlogs for gpt engine 3.5
         self.all_msgs = self.pre_msgs
@@ -26,8 +26,12 @@ class GPTChat(object):
         else:
             self.temperature = 0.5 
 
-    def setCharacteristic(self, text):
-        """For gpt engine 3.5, set assistant working styles"""
+    def setTokenLength(self, length):
+        self.token_length = length
+        self.max_length = length * 2
+
+    def setInitAssistant(self, text):
+        """For gpt engine 3.5, set a default assistant content"""
         logger.debug(f"assistant={text}")
         if not text:
             return
@@ -39,8 +43,10 @@ class GPTChat(object):
         # re-assign to chatting backlogs
         self.all_msgs = self.pre_msgs
 
-    def chatCompletion(self, text):
-        resp_length = self.max_length
+    def chatCompletion(self, text, resp_length):
+        """return reply string and continous boolean"""
+        # twitch has maximum characters 500
+        #resp_length = self.token_length
         # given history backlogs including pre-messages for roles of system and assistant
         msgs = self.all_msgs
         # build a message structure for chat completion API
@@ -58,7 +64,7 @@ class GPTChat(object):
 
         # check out the response format [link](https://platform.openai.com/docs/api-reference/chat/create)
         reply_text = ""
-        logger.debug(resp)
+        logger.debug(f"res: {resp}")
         if not hasattr(resp, 'choices') or len(resp.choices) == 0 or not resp.choices[0].message:
             reply_text = "I got no response"
             return reply_text
@@ -72,23 +78,23 @@ class GPTChat(object):
         logger.debug(f"choices: {resp.choices[0].message.content}")
 
         #TODO: need squash messages avoid huge backlogs?
-        # update user and response content to message backlogs
-        if text:
-            self.all_msgs.append(msg)
+        #TODO: remove previous non-finished message or just keep it
         self.all_msgs.append(resp.choices[0].message)
+
+        reply_text = resp.choices[0].message.content
+        #logger.debug(f"reply: {reply_text}")
         
-        #TODO: usually exceed maximum twitch limitation(500 chars)
         # recursive call while finish_reason is length
         if resp.choices[0].finish_reason == "length":
             logger.debug("Response not finished, retrieve again")
-            self.chatCompletion(None)
-        # assume finish_reason == "stop", backward check contents from role assistant
-        for r in reversed(self.all_msgs):
-            if r["role"] != "assistant":
-                break
-            reply_text = r["content"].strip() + reply_text
-        logger.debug(f"reply: {reply_text}")
-        return reply_text[0:400] # maximum 500 for twitch
+            add_text = self.chatCompletion(None, self.max_length)
+            # append or replace
+            if reply_text.split(" ")[0] == add_text.split(" ")[0]:
+                reply_text = add_text
+            else:
+                reply_text += add_text
+        
+        return reply_text
 
     def completion(self, text):
         """text completion using gpt 3 engine"""
