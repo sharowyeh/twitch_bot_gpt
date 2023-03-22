@@ -117,7 +117,7 @@ class TwtichBot(commands.Bot):
         # still need a end mark, it is annoy in twitch chat dialog?
         #await ctx.send(f"{ctx.author.mention} [BOT] 😘")
 
-bot = Bot()
+bot = TwtichBot()
 bot.run()
 
 
