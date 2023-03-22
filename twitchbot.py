@@ -16,10 +16,10 @@ if os.environ.get('OPENAI_API_KEY') is None:
 logger.debug(f"token:{os.environ.get('TWITCH_TOKEN')}")
 logger.debug(f"client:{os.environ['TWITCH_CLIENT_ID']}")
 
-from chat import GPTChat
+from gptchat import GPTChat
 gptchat = GPTChat()
 
-class Bot(commands.Bot):
+class TwtichBot(commands.Bot):
 
     def __init__(self):
         super().__init__(
