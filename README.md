@@ -24,7 +24,17 @@ do gpt 3.5 given messages or backlogs need squash? or store in other forms?
 
 visit and register for https://dev.twitch.tw/console
 
-add application with chat bot, set unique id for auth page and keep secret for the application oauth usage
+add application with chat bot, set unique id for user auth page display, client id and secret for oauth usage
+
+for authentication, refer https://dev.twitch.tv/docs/irc/authenticate-bot/
+
+since I just test own chat bot, simply use implict flow from example
+
+https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=<client_id>&redirect_uri=http://localhost&scope=channel%3Amoderate+chat%3Aedit+chat%3Aread&state=c3ab8aa609ea11e793ae92361f002671
+
+for scopes, refer to https://dev.twitch.tv/docs/authentication/scopes/
+
+
 ## TODO ## 
 further steps, blah blah blah
 
