@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  # database environment for dev to raspberry pi
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.debian_mariadb
+    image: rpi-mariadb:buster
+    container_name: rpi-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      # Use a named volume for data persistence
+      - debian-mariadb-data:/var/lib/mysql
+      # Some initial sql scripts for database bring up, need drop tables if schema not consistent
+      - ./data:/home
+    ports:
+      # Expose port 3306 on the host machine
+      - "3306:3306"
+    command: >
+      bash -c "
+        /etc/init.d/mysql start &&
+        mysql -u root -proot < /home/init.sql &&
+        mysql -u dev -pdev chatgpt < /home/init-chatgpt.sql &&
+        tail -F anything
+      "
+
+# Define the named volume for data persistence
+volumes:
+  debian-mariadb-data:

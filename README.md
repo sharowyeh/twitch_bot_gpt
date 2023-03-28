@@ -19,6 +19,9 @@ model gpt-3.5-turbo given messages and roles from `system`, `assistant` and `use
 ## TODO ##
 do gpt 3.5 given messages or backlogs need squash? or store in other forms?
 
+try to use data store to manage conversations which maximum token is 4096
+`> docker-compose -f docker-compose.mariadb.yml up -d`
+I think the implementation must exists somewhere in github
 
 # twtich bot #
 
