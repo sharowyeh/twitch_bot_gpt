@@ -19,6 +19,9 @@ logger.debug(f"client:{os.environ['TWITCH_CLIENT_ID']}")
 from gptchat import GPTChat
 gptchat = GPTChat()
 
+from datastore import DataStore
+gptdata = DataStore()
+
 class TwtichBot(commands.Bot):
 
     def __init__(self):
@@ -42,11 +45,28 @@ class TwtichBot(commands.Bot):
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name}')
         await ctx.reply(f'[BOT] aww~~ hello world! {ctx.author.name}')
 
+    @commands.command(name='setgpt')
+    async def setgpt(self, ctx: commands.Context):
+        """given a name for topic used for bot characteristic"""
+        logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
+        text = ctx.message.replace(f"!{ctx.command.name} ", "")
+        if not text:
+            return
+        id = gptdata.createTopic(text)
+        # TODO not ready, check behavior, 
+        #   send message to API, save to datastore from response
+        #   or save to datastore forehand
+        # given default system role message matching twitch chat room usage
+        if not id:
+            await ctx.reply(f'[BOT] why cant i get id aaaah')
+            return
+        gptdata.createMessage(id, "always brief reply in a sentence", "system", "", "", "", "", 0, 0, 0)
+
     @commands.command(name='assistant')
     async def assistant(self, ctx: commands.Context):
         """given additional assistant behavor to gpt 3.5"""
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
-        text = ctx.message.content[6:]
+        text = ctx.message.replace(f"!{ctx.command.name} ", "")
         if not text:
             return
         gptchat.setInitAssistant(text)
@@ -77,9 +97,9 @@ class TwtichBot(commands.Bot):
 
     @commands.command(name='chat')
     async def chat(self, ctx: commands.Context):
-        logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
+        logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content} param:{ctx.command.params}')
         # remove command !chat
-        text = ctx.message.content[6:]
+        text = ctx.message.replace(f"!{ctx.command.name} ", "")
         if not text:
             await ctx.send(f"{ctx.author.mention} [BOT] how's today?")
             return
@@ -99,8 +119,8 @@ class TwtichBot(commands.Bot):
     async def text(self, ctx: commands.Context):
         """previous version for text completion using davinci 003 engine"""
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
-        # remove command !chat
-        text = ctx.message.content[6:]
+        # remove command
+        text = ctx.message.replace(f"!{ctx.command.name} ", "")
         if not text:
             await ctx.send(f"{ctx.author.mention} [BOT] how's today?")
             return

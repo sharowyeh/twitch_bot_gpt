@@ -1,7 +1,7 @@
 /*Initial tables for chatgpt instance*/
-
+following are 2 mariadb tables, given me a CURD functions class in python
 /*To switch different topics like ChatGPT website conversations*/
-CREATE TABLE IF NOT EXISTS `topics` (
+CREATE TABLE IF NOT EXISTS `chatgpt`.`topics` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `name` varchar(64) NOT NULL,
     `messages` int(11) DEFAULT '0',
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `topics` (
 
 
 /*May follow completion response from chat API*/
-CREATE TABLE IF NOT EXISTS `messages` (
+CREATE TABLE IF NOT EXISTS `chatgpt`.`messages` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `topics_id` int(11) DEFAULT '0',
     `content` varchar(4096),
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
     `created` int(11) DEFAULT '0',
     `chat_id` varchar(64) NOT NULL,
     `model` varchar(32) NOT NULL,
-    `object` varchar(32) NOT NULL,
+    `obj` varchar(32),
     `completion_tokens` int(11) DEFAULT '0',
     `prompt_tokens` int(11) DEFAULT '0',
     `total_tokens` int(11) DEFAULT '0',
