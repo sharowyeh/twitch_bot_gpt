@@ -49,7 +49,7 @@ class TwtichBot(commands.Bot):
     async def setgpt(self, ctx: commands.Context):
         """given a name for topic used for bot characteristic"""
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
-        text = ctx.message.replace(f"!{ctx.command.name} ", "")
+        text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             return
         id = gptdata.createTopic(text)
@@ -66,7 +66,7 @@ class TwtichBot(commands.Bot):
     async def assistant(self, ctx: commands.Context):
         """given additional assistant behavor to gpt 3.5"""
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
-        text = ctx.message.replace(f"!{ctx.command.name} ", "")
+        text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             return
         gptchat.setInitAssistant(text)
@@ -99,7 +99,7 @@ class TwtichBot(commands.Bot):
     async def chat(self, ctx: commands.Context):
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content} param:{ctx.command.params}')
         # remove command !chat
-        text = ctx.message.replace(f"!{ctx.command.name} ", "")
+        text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             await ctx.send(f"{ctx.author.mention} [BOT] how's today?")
             return
@@ -120,7 +120,7 @@ class TwtichBot(commands.Bot):
         """previous version for text completion using davinci 003 engine"""
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content}')
         # remove command
-        text = ctx.message.replace(f"!{ctx.command.name} ", "")
+        text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             await ctx.send(f"{ctx.author.mention} [BOT] how's today?")
             return
