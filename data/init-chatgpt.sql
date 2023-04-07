@@ -1,5 +1,5 @@
 /*Initial tables for chatgpt instance*/
-following are 2 mariadb tables, given me a CURD functions class in python
+
 /*To switch different topics like ChatGPT website conversations*/
 CREATE TABLE IF NOT EXISTS `chatgpt`.`topics` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
