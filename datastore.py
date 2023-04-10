@@ -117,7 +117,9 @@ class DataStore(object):
                 "INSERT INTO messages (topics_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
                 (topic_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens,))
             self.conn.commit()
+            id = self.cursor.lastrowid
             self.disconnect()
+            return id
         except mariadb.Error as err:
             logger.exception(f"Unexpected {err}, {type(err)}")
         except Exception as e:
@@ -155,6 +157,21 @@ class DataStore(object):
             self.cursor.execute("DELETE FROM messages WHERE id = ?", (message_id,))
             self.conn.commit()
             self.disconnect()
+        except mariadb.Error as err:
+            logger.exception(f"Unexpected {err}, {type(err)}")
+        except Exception as e:
+            logger.debug(f"Unexpected {e}, {type(e)}")
+
+    def getMessageCount(self, topic_id):
+        """Get message count from given topic TODO: should I miss ORM framework?"""
+        try:
+            self.connect()
+            self.cursor.execute(
+                "SELECT COUNT(id) FROM messages WHERE topics_id = ?",
+                (topic_id,))
+            result = self.cursor.fetchone()
+            self.disconnect()
+            return result
         except mariadb.Error as err:
             logger.exception(f"Unexpected {err}, {type(err)}")
         except Exception as e:

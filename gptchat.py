@@ -30,11 +30,25 @@ class GPTChat(object):
         self.token_length = length
         self.max_length = length * 2
 
+    def setInitSystem(self, text):
+        """For GPT engine 3.5, set the default system content"""
+        logger.debug(f"system={text}")
+        if not text:
+            return
+        # be always at the first of pre_msgs
+        if len(self.pre_msgs) == 0:
+            self.pre_msgs.append({"role": "system", "content": text})
+        else:
+            self.pre_msgs[0]["content"] = text
+        #TODO: replace prev completion whole backlogs or just first 2?
+        self.all_msgs = self.pre_msgs
+
     def setInitAssistant(self, text):
         """For gpt engine 3.5, set a default assistant content"""
         logger.debug(f"assistant={text}")
         if not text:
             return
+        # be always at the second of pre_msgs
         if len(self.pre_msgs) == 1:
             self.pre_msgs.append({"role": "assistant", "content": text})
         else:
@@ -83,18 +97,24 @@ class GPTChat(object):
 
         reply_text = resp.choices[0].message.content
         #logger.debug(f"reply: {reply_text}")
+        #TODO: merge dict? [{**resp, **resp.choices[0].message}] for py3.5 or later
+        reply_objs = [resp]
         
         # recursive call while finish_reason is length
         if resp.choices[0].finish_reason == "length":
             logger.debug("Response not finished, retrieve again")
-            add_text = self.chatCompletion(None, self.max_length)
+            (add_text, add_objs) = self.chatCompletion(None, self.max_length)
             # append or replace
             if reply_text.split(" ")[0] == add_text.split(" ")[0]:
                 reply_text = add_text
+                # return single response for data store
+                reply_objs[0] = add_objs[-1]
             else:
                 reply_text += add_text
+                # return multiple responses for data store
+                reply_objs.append(add_objs[-1])
         
-        return reply_text
+        return (reply_text, reply_objs)
 
     def completion(self, text):
         """text completion using gpt 3 engine"""

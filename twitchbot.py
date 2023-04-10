@@ -30,6 +30,7 @@ class TwtichBot(commands.Bot):
                 nick='justabot', #nick assignment is useless here
                 prefix=os.environ['TWITCH_BOT_PREFIX'],
                 initial_channels=[os.environ['TWITCH_CHANNEL']])
+        self.topic_id = None
     
     async def event_ready(self):
         logger.debug(f'bot is ready nick: {self.nick}')
@@ -52,15 +53,19 @@ class TwtichBot(commands.Bot):
         text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             return
-        id = gptdata.createTopic(text)
-        # TODO not ready, check behavior, 
-        #   send message to API, save to datastore from response
-        #   or save to datastore forehand
-        # given default system role message matching twitch chat room usage
-        if not id:
-            await ctx.reply(f'[BOT] why cant i get id aaaah')
+        #TODO: so far data store is mandatory
+        #TODO: always create new or getTopic from exists?
+        self.topic_id = gptdata.createTopic(text)
+        if not self.topic_id:
+            await ctx.reply(f'[BOT] my datastore goes wrong!')
             return
-        gptdata.createMessage(id, "always brief reply in a sentence", "system", "", "", "", "", 0, 0, 0)
+        # simply create default system message for the new topic,
+        #   keep reply briefly for the twitch chat room 
+        GPT_DEFAULT_SYSTEM_CONTENT = "always brief reply in a sentence"
+        gptchat.setInitSystem(GPT_DEFAULT_SYSTEM_CONTENT)
+        msg_id = gptdata.createMessage(self.topic_id, GPT_DEFAULT_SYSTEM_CONTENT, "system", 0, "", "", "", 0, 0, 0)
+        logger.debug(f'msg:{msg_id} system message created for topic:{self.topic_id}')
+        await ctx.reply(f'[BOT] topic created, use !assistant for given features or !chat directly🙄')
 
     @commands.command(name='assistant')
     async def assistant(self, ctx: commands.Context):
@@ -69,8 +74,14 @@ class TwtichBot(commands.Bot):
         text = ctx.message.content.replace(f"!{ctx.command.name} ", "")
         if not text:
             return
+        #TODO: so far data store is mandatory
+        if not self.topic_id:
+            await ctx.reply(f'[BOT] my datastore goes wrong!')
+            return
+        msg_id = gptdata.createMessage(self.topic_id, text, "assistant", 0, "", "", "", 0, 0, 0)
+        logger.debug(f'msg:{msg_id} assistant message create for topic:{self.topic_id}')
         gptchat.setInitAssistant(text)
-        await ctx.send(f"{ctx.author.mention} [BOT] The assistant has been set")
+        await ctx.reply(f"[BOT] assistant set, use !chat to see what you get😊")
 
     async def mention_reply(self, ctx: commands.Context, text: str):
         """helper function avoid reply message exceed 500 ccharacters"""
@@ -103,10 +114,29 @@ class TwtichBot(commands.Bot):
         if not text:
             await ctx.send(f"{ctx.author.mention} [BOT] how's today?")
             return
+        #TODO: so far data store is mandatory
+        if not self.topic_id:
+            await ctx.reply(f'[BOT] my datastore goes wrong!')
+            return
+        msg_id = gptdata.createMessage(self.topic_id, text, "user", 0, "", "", "", 0, 0, 0)
+        logger.debug(f'msg:{msg_id} user message create for topic:{self.topic_id}')
         # increase temperature...
         gptchat.setTemp(0.7)
         try:
-            reply_text = gptchat.chatCompletion(text, 50)
+            (reply_text, reply_objs) = gptchat.chatCompletion(text, 50)
+            for resp in reply_objs:
+                msg_id = gptdata.createMessage(
+                    self.topic_id, 
+                    resp.choices[0].message.content, 
+                    resp.choices[0].message.role, 
+                    resp.created, 
+                    resp.id, 
+                    resp.model, 
+                    resp['object'], 
+                    resp.usage.completion_tokens, 
+                    resp.usage.prompt_tokens, 
+                    resp.usage.total_tokens)
+                logger.debug(f'msg:{msg_id} assistant reply message create for topic:{self.topic_id}')
         except Exception as err:
             logger.exception(f"Unexpected {err}, {type(err)}")
             reply_text = "I got error"
