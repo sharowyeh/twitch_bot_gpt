@@ -110,12 +110,12 @@ class DataStore(object):
             logger.debug(f"Unexpected {e}, {type(e)}")
 
 
-    def createMessage(self, topic_id, content, role, created, chat_id, model, object, completion_tokens, prompt_tokens, total_tokens):
+    def createMessage(self, topic_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens):
         try:
             self.connect()
             self.cursor.execute(
-                "INSERT INTO messages (topics_id, content, role, created, chat_id, model, object, completion_tokens, prompt_tokens, total_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                (topic_id, content, role, created, chat_id, model, object, completion_tokens, prompt_tokens, total_tokens,))
+                "INSERT INTO messages (topics_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                (topic_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens,))
             self.conn.commit()
             self.disconnect()
         except mariadb.Error as err:
@@ -136,12 +136,12 @@ class DataStore(object):
         except Exception as e:
             logger.debug(f"Unexpected {e}, {type(e)}")
         
-    def updateMessage(self, message_id, content, role, created, chat_id, model, object, completion_tokens, prompt_tokens, total_tokens):
+    def updateMessage(self, message_id, content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens):
         try:
             self.connect()
             self.cursor.execute(
-                "UPDATE messages SET content = ?, role = ?, created = ?, chat_id = ?, model = ?, object = ?, completion_tokens = ?, prompt_tokens = ?, total_tokens = ? WHERE id = ?", 
-                (content, role, created, chat_id, model, object, completion_tokens, prompt_tokens, total_tokens, message_id,))
+                "UPDATE messages SET content = ?, role = ?, created = ?, chat_id = ?, model = ?, obj = ?, completion_tokens = ?, prompt_tokens = ?, total_tokens = ? WHERE id = ?", 
+                (content, role, created, chat_id, model, obj, completion_tokens, prompt_tokens, total_tokens, message_id,))
             self.conn.commit()
             self.disconnect()
         except mariadb.Error as err:
