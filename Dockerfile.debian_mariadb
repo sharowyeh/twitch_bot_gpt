@@ -6,4 +6,6 @@ EXPOSE 3306
 
 ENV MYSQL_ROOT_PASSWORD=root
 
+COPY data/50-server.cnf /etc/mysql/mariadb.conf.d/
+
 CMD ["/bin/bash"]
