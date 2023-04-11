@@ -1,3 +1,8 @@
+# why i do this? #
+
+due to twitch chat room is not suitable for long text, likes chat gpt usually responding detailed reply, function separates context as multiple sentences sending to openai api
+
+been separated chat gpt function in a class, and note that referenced from my another [discord chatbot project](https://github.com/sharowyeh/discord-bot-gpt), but currently have no idea how to do for project depencency
 
 # openai api #
 
@@ -16,12 +21,22 @@ separate individual method call for different models
 
 model gpt-3.5-turbo given messages and roles from `system`, `assistant` and `user`, to keep context for references
 
-## TODO ##
-do gpt 3.5 given messages or backlogs need squash? or store in other forms?
 
-try to use data store to manage conversations which maximum token is 4096
-`> docker-compose -f docker-compose.mariadb.yml up -d`
-I think the implementation must exists somewhere in github
+## TODO ##
+
+- try to manage gpt chat msgs which token exceeded 4096 in a request
+- other in source code with TODO: comments
+
+# data storage #
+
+only for running environment in my raspberry in debian and mariadb, asked chatgpt design the docker and yaml files for me.
+
+env => debian:buster + mariadb:10.3.38
+
+refer to `docker-compose.mariadb.yml` for container
+
+refer to `data` folder for mariadb initialization for the container
+
 
 # twtich bot #
 
@@ -31,14 +46,11 @@ add application with chat bot, set unique id for user auth page display, client 
 
 for authentication, refer https://dev.twitch.tv/docs/irc/authenticate-bot/
 
-since I just test own chat bot, simply use implict flow from example
+since I just test own chat bot, simply use implict flow from example, paste to browser url
 
+```
 https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=<client_id>&redirect_uri=http://localhost&scope=channel%3Amoderate+chat%3Aedit+chat%3Aread&state=c3ab8aa609ea11e793ae92361f002671
+```
 
 for scopes, refer to https://dev.twitch.tv/docs/authentication/scopes/
 
-
-## TODO ## 
-further steps, blah blah blah
-
-due to twitch chat room is not suitable for long text, likes chat gpt usually responding detailed reply, function separates context as multiple sentences to send
