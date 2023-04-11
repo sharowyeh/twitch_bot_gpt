@@ -176,3 +176,23 @@ class DataStore(object):
             logger.exception(f"Unexpected {err}, {type(err)}")
         except Exception as e:
             logger.debug(f"Unexpected {e}, {type(e)}")
+
+    def updateTopicTokens(self, topic_id):
+        """Update topic tokens and messages without really pull out data TODO: or make triggers in DB?"""
+        try:
+            self.connect()
+            # can ask chat gpt for trigger or other efficient version
+            self.cursor.execute(
+                "UPDATE topics t INNER JOIN ( \
+                    SELECT topics_id, COUNT(*) AS msg_count, MAX(total_tokens) as max_tokens \
+                    FROM messages m \
+                    WHERE topics_id = ? \
+                ) m ON m.topics_id = t.id \
+                SET t.messages = m.msg_count, t.total_tokens = m.max_tokens",
+                (topic_id,))
+            self.conn.commit()
+            self.disconnect()
+        except mariadb.Error as err:
+            logger.exception(f"Unexpected {err}, {type(err)}")
+        except Exception as e:
+            logger.debug(f"Unexpected {e}, {type(e)}")

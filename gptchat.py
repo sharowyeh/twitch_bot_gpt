@@ -6,18 +6,26 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 
+# TODO: free trial is 20 RPM and 40k TPM, refer to [rate limit](https://platform.openai.com/docs/guides/rate-limits)
+#   based on the chat method calling frequences to design chunks for sending requests
+GPT_RATE_LIMIT = 40000
+GPT_TOKENS_PER_REQUEST = 4096 # GPT3.5 tokens per request is 4096
+
 class GPTChat(object):
     """ Open AI chat with limited content length for community service usage """
     def __init__(self):
         self.temperature = 0.5
-        self.token_length = 100
-        self.max_length = 200
-        # we need to let sentence as simple as passible during the twitch chatting
+        # smaller token length to fit most human chitchat styles(perhaps)
+        self.token_length = 50
+        self.max_length = 100
+        # we need to let sentence as simple as passible during the twitch or discord chatting
         self.pre_msgs = [
-            {"role": "system", "content": "always brief reply in 2 sentences"}
+            {"role": "system", "content": "always brief reply in a sentence"}
         ]
         # full chatting backlogs for gpt engine 3.5
         self.all_msgs = self.pre_msgs
+        # TODO: do check for tokens per request and rate limit?
+        self.total_tokens = 0
     
     def setTemp(self, temperature):
         logger.debug(f"temper={temperature}")
@@ -27,6 +35,8 @@ class GPTChat(object):
             self.temperature = 0.5 
 
     def setTokenLength(self, length):
+        # based on limit a sentence length, also want to limit large context
+        #   NOTE: smaller token length causes more separated requests 
         self.token_length = length
         self.max_length = length * 2
 
@@ -42,6 +52,7 @@ class GPTChat(object):
             self.pre_msgs[0]["content"] = text
         #TODO: replace prev completion whole backlogs or just first 2?
         self.all_msgs = self.pre_msgs
+        self.total_tokens = 0
 
     def setInitAssistant(self, text):
         """For gpt engine 3.5, set a default assistant content"""
@@ -56,11 +67,12 @@ class GPTChat(object):
         #TODO: should we just make a completion see what we got first?
         # re-assign to chatting backlogs
         self.all_msgs = self.pre_msgs
+        self.total_tokens = 0
 
     def chatCompletion(self, text, resp_length):
         """return reply string and continous boolean"""
-        # twitch has maximum characters 500
-        #resp_length = self.token_length
+        if not resp_length:
+            resp_length = self.token_length
         # given history backlogs including pre-messages for roles of system and assistant
         msgs = self.all_msgs
         # build a message structure for chat completion API
@@ -114,6 +126,10 @@ class GPTChat(object):
                 # return multiple responses for data store
                 reply_objs.append(add_objs[-1])
         
+        self.total_tokens = max(self.total_tokens, reply_objs[-1].usage.total_tokens)
+        if (self.total_tokens > GPT_TOKENS_PER_REQUEST * .8):
+            logger.debug(f"total token:{self.total_tokens} exceeded 80%, squash all_msgs or init new chat")
+            #TODO: do something further
         return (reply_text, reply_objs)
 
     def completion(self, text):

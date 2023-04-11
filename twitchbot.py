@@ -22,6 +22,16 @@ gptchat = GPTChat()
 from datastore import DataStore
 gptdata = DataStore()
 
+# pre-defined stuff
+TWITCH_CHAT_REPLY_LENGTH = 150 # keep single sentence for twtich chat room
+GPT_DEFAULT_SYSTEM_CONTENT = "always brief reply in a sentence"
+
+# TODO: free trial is 20 RPM and 40k TPM, refer to [rate limit](https://platform.openai.com/docs/guides/rate-limits)
+#   based on the !chat usage frequences to design chunks for sending requests
+# TODO: behaviors should design in the gptchat.py
+GPT_RATE_LIMIT = 40000
+GPT_TOKENS_PER_REQUEST = 4096 # GPT3.5 tokens per request
+
 class TwtichBot(commands.Bot):
 
     def __init__(self):
@@ -45,6 +55,7 @@ class TwtichBot(commands.Bot):
     async def hello(self, ctx: commands.Context):
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name}')
         await ctx.reply(f'[BOT] aww~~ hello world! {ctx.author.name}')
+        await ctx.reply(f'[BOT] aww~~ {ctx.channel.name} force me reply twice🙄')
 
     @commands.command(name='setgpt')
     async def setgpt(self, ctx: commands.Context):
@@ -61,7 +72,6 @@ class TwtichBot(commands.Bot):
             return
         # simply create default system message for the new topic,
         #   keep reply briefly for the twitch chat room 
-        GPT_DEFAULT_SYSTEM_CONTENT = "always brief reply in a sentence"
         gptchat.setInitSystem(GPT_DEFAULT_SYSTEM_CONTENT)
         msg_id = gptdata.createMessage(self.topic_id, GPT_DEFAULT_SYSTEM_CONTENT, "system", 0, "", "", "", 0, 0, 0)
         logger.debug(f'msg:{msg_id} system message created for topic:{self.topic_id}')
@@ -84,20 +94,19 @@ class TwtichBot(commands.Bot):
         await ctx.reply(f"[BOT] assistant set, use !chat to see what you get😊")
 
     async def mention_reply(self, ctx: commands.Context, text: str):
-        """helper function avoid reply message exceed 500 ccharacters"""
-        REPLY_LENGTH = 150 # keep single sentence for twtich chat room
+        """helper function avoid reply message exceeded 500 characters"""
         logger.debug(f'')
         reply = ""
         delimiter = "\n"
         sp = text.split(delimiter)
-        if len(sp[0]) > REPLY_LENGTH:
+        if len(sp[0]) > TWITCH_CHAT_REPLY_LENGTH:
             delimiter = "."
             sp = text.split(delimiter)
         while (len(sp) > 0):
             # ref:array.deque(), popleft()
             reply += sp.pop(0) + "."
 
-            if len(reply) > REPLY_LENGTH:
+            if len(reply) > TWITCH_CHAT_REPLY_LENGTH:
                 logger.debug(f"reply: {reply}")
                 await ctx.send(f"{ctx.author.mention} [BOT] {reply}")
                 reply = ""
@@ -122,6 +131,8 @@ class TwtichBot(commands.Bot):
         logger.debug(f'msg:{msg_id} user message create for topic:{self.topic_id}')
         # increase temperature...
         gptchat.setTemp(0.7)
+        gptchat.setTokenLength(50)
+        total_tokens = 0
         try:
             (reply_text, reply_objs) = gptchat.chatCompletion(text, 50)
             for resp in reply_objs:
@@ -137,13 +148,21 @@ class TwtichBot(commands.Bot):
                     resp.usage.prompt_tokens, 
                     resp.usage.total_tokens)
                 logger.debug(f'msg:{msg_id} assistant reply message create for topic:{self.topic_id}')
+                logger.debug(f'token usage:{resp.usage}')
+                total_tokens = resp.usage.total_tokens
+            # update for token usage
+            gptdata.updateTopicTokens(self.topic_id)
         except Exception as err:
             logger.exception(f"Unexpected {err}, {type(err)}")
             reply_text = "I got error"
  
-        # send whole text at once from response
-        await self.mention_reply(ctx, reply_text)
-        #await ctx.send(f"{ctx.author.mention} [BOT] {reply_text}")
+        # send reply prevent exceeded twitch chat length
+        await self.mention_reply(ctx, reply_text)    
+        # remind chat gpt rate limit
+        if total_tokens > (GPT_TOKENS_PER_REQUEST * 0.85):
+            await ctx.send(f'[BOT] I\'m going to get error! stop chatting and help me!😫')
+        elif total_tokens > (GPT_TOKENS_PER_REQUEST * 0.7):
+            await ctx.send(f'[BOT] Soft remind, chat token usage is over 70%, make chunks or squash history!🙄')  
 
     @commands.command(name='text')
     async def text(self, ctx: commands.Context):
@@ -162,12 +181,8 @@ class TwtichBot(commands.Bot):
             logger.exception(f"Unexpected {err}, {type(err)}")
             reply_text = "I got error"
  
-        # send whole text at once from response
-        await ctx.send(f"{ctx.author.mention} [BOT] {reply_text}")
-        # still need a end mark, it is annoy in twitch chat dialog?
-        #await ctx.send(f"{ctx.author.mention} [BOT] 😘")
+        # send reply prevent exceeded twitch chat length
+        await self.mention_reply(ctx, reply_text)
 
 bot = TwtichBot()
 bot.run()
-
-
