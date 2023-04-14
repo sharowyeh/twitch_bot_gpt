@@ -8,9 +8,9 @@ DB_CONN_STRING = "localhost:3306"
 DB_USER_NAME = "dev"
 DB_USER_PASSWORD = "dev"
 
-conn_string = os.environ.get('DB_CONN_STRING', DB_CONN_STRING)
-user_name = os.environ.get('DB_USER_NAME', DB_USER_NAME)
-user_password = os.environ.get('DB_USER_PASSWORD', DB_USER_PASSWORD)
+conn_string = os.environ.get("DB_CONN_STRING", DB_CONN_STRING)
+user_name = os.environ.get("DB_USER_NAME", DB_USER_NAME)
+user_password = os.environ.get("DB_USER_PASSWORD", DB_USER_PASSWORD)
 
 # For mariadb refer to:
 #   https://mariadb-corporation.github.io/mariadb-connector-python/cursor.html
@@ -19,12 +19,13 @@ user_password = os.environ.get('DB_USER_PASSWORD', DB_USER_PASSWORD)
 class DataStore(object):
     def __init__(self):
         """DAO for chatgpt instance in my mariadb"""
+        self.type = "MARIADB"
         # TODO: try to use connection pool
         self.host = conn_string.split(':')[0]
         self.port = int(conn_string.split(':')[1])
         self.user = user_name
         self.password = user_password
-        self.database = 'chatgpt'
+        self.database = "chatgpt"
 
     def connect(self):
         try:

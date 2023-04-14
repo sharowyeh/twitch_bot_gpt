@@ -10,3 +10,7 @@ export TWITCH_BOT_NICK=
 export TWITCH_BOT_PREFIX=
 export TWITCH_CHANNEL=
 export OPENAI_API_KEY=
+#for my datastore
+export DB_CONN_STRING=localhost:3306
+export DB_USER_NAME=dev
+export DB_USER_PASSWORD=dev
