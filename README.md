@@ -79,7 +79,7 @@ NOTE: for python load module in runtime, these libs need to add to ld library pa
 > sudo vim /etc/ld.so.conf.d/my-mariadb-connector-arm.conf
 > # add /lib/local/mariadb in the text file
 > sudo ldconfig
-
+```
 
 # twtich bot #
 

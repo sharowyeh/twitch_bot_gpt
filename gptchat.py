@@ -1,6 +1,7 @@
 import os
 import logging
 import openai
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,36 @@ class GPTChat(object):
         self.all_msgs = self.pre_msgs
         self.total_tokens = 0
 
+    def splitText(self, text : str, length=200, delimiters=['. ',': ','; ','. ',' ']):
+        """split long text based on my own delimiters prioritization"""
+        # NOTE: string module has pre-defined whitespace, punctuation properties but not suitable for my usage
+        # primary substring for long text by paragraphs delimiters without whitespace char
+        substrings = re.split("[\t\n\r\v\f]+", text)
+        chunks = []
+        # check and split substring length is greater then given length
+        for substring in substrings:
+            if len(substring) <= length:
+                chunks.append(substring)
+            else:
+                index = -1
+                while len(substring) > length:
+                    for p in delimiters:
+                        index = substring.rfind(p, 0, length)
+                        if index > 0:
+                            break
+                    # edge case if delimiters not found in the given length
+                    if index == -1:
+                        index = length
+                    # get lengthed sentence to chunks with given punctuation marks(delimiters)
+                    chunks.append(substring[:index+1])
+                    # reset string for next while loop for next delimiters
+                    substring = substring[index+1:]
+                # rest of substring
+                if len(substring) > 0:
+                    chunks.append(substring)
+        return chunks
+
+
     def chatCompletion(self, text, resp_length):
         """return reply string and continous boolean"""
         if not resp_length:
@@ -116,7 +147,7 @@ class GPTChat(object):
         if resp.choices[0].finish_reason == "length":
             logger.debug("Response not finished, retrieve again")
             (add_text, add_objs) = self.chatCompletion(None, self.max_length)
-            # append or replace
+            # append or replace from openai API results
             if reply_text.split(" ")[0] == add_text.split(" ")[0]:
                 reply_text = add_text
                 # return single response for data store

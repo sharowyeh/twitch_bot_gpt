@@ -93,28 +93,6 @@ class TwtichBot(commands.Bot):
         gptchat.setInitAssistant(text)
         await ctx.reply(f"[BOT] assistant set, use !chat to see what you get😊")
 
-    async def mention_reply(self, ctx: commands.Context, text: str):
-        """helper function avoid reply message exceeded 500 characters"""
-        logger.debug(f'')
-        reply = ""
-        delimiter = "\n"
-        sp = text.split(delimiter)
-        if len(sp[0]) > TWITCH_CHAT_REPLY_LENGTH:
-            delimiter = "."
-            sp = text.split(delimiter)
-        while (len(sp) > 0):
-            # ref:array.deque(), popleft()
-            reply += sp.pop(0) + "."
-
-            if len(reply) > TWITCH_CHAT_REPLY_LENGTH:
-                logger.debug(f"reply: {reply}")
-                await ctx.send(f"{ctx.author.mention} [BOT] {reply}")
-                reply = ""
-        
-        if reply and reply != "." and len(reply.strip()) > 0:
-            await ctx.send(f"{ctx.author.mention} [BOT] {reply}")
-            logger.debug(f'reply: {reply}')
-
     @commands.command(name='chat')
     async def chat(self, ctx: commands.Context):
         logger.debug(f'cmd:{ctx.command.name} user:{ctx.author.name} msg:{ctx.message.content} param:{ctx.command.params}')
@@ -156,8 +134,10 @@ class TwtichBot(commands.Bot):
             logger.exception(f"Unexpected {err}, {type(err)}")
             reply_text = "I got error"
  
-        # send reply prevent exceeded twitch chat length
-        await self.mention_reply(ctx, reply_text)    
+        # chunk text prevent exceeded twitch chat length
+        for chunk_text in gptchat.splitText(reply_text):
+            await ctx.send(f"{ctx.author.mention} [BOT] {chunk_text}")
+
         # remind chat gpt rate limit
         if total_tokens > (GPT_TOKENS_PER_REQUEST * 0.85):
             await ctx.send(f'[BOT] I\'m going to get error! stop chatting and help me!😫')
@@ -181,8 +161,9 @@ class TwtichBot(commands.Bot):
             logger.exception(f"Unexpected {err}, {type(err)}")
             reply_text = "I got error"
  
-        # send reply prevent exceeded twitch chat length
-        await self.mention_reply(ctx, reply_text)
+        # chunk text prevent exceeded twitch chat length
+        for chunk_text in gptchat.splitText(reply_text):
+            await ctx.send(f"{ctx.author.mention} [BOT] {chunk_text}")
 
 bot = TwtichBot()
 bot.run()
