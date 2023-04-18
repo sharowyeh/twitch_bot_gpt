@@ -37,6 +37,49 @@ refer to `docker-compose.mariadb.yml` for container
 
 refer to `data` folder for mariadb initialization for the container
 
+mariadb connector/c for python requires system packages, [see also](https://mariadb.com/docs/skysql/connect/programming-languages/c/install/#Install_on_Debian,_Ubuntu)
+
+```
+> sudo apt-get install libmariadb3 libmariadb-dev
+```
+
+## NOTE for raspbian ##
+
+env => raspbian:buster + mariadb:10.3.29
+
+Before install mariadb connector and python pacakge on debian buster,
+pkg manager default installed gnueabihf compiled 3.1.20
+(or just because I dont want to update index files), 
+which not fit for mariadb python package minimal requires 3.3.1
+
+try to get connector/c source code from https://github.com/mariadb-corporation/mariadb-connector-c
+
+find socket the database running at
+```
+mysqld --verbose --help | grep ^socket
+```
+
+```
+> git clone https://github.com/MariaDB/mariadb-connector-c.git
+> cd mariadb-connector-c
+> git checkout v3.3.1
+> mkdir build & cd build
+> cmake ../ -LH -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DWITH_SSL=OPENSSL -DDM_DIR=/usr/lib/arm-linux-gnueabihf -DCMAKE_C_FLAGS_RELEASE:STRING="-w" -DMARIADB_UNIX_ADDR=/run/mysqld/mysqld.sock
+> cmake --build . --config Release
+> make install
+```
+
+NOTE: commands above will install compiled libmariadb at /usr/local/mariadb, can simply use following command listing props
+```
+> mariadb_config --help
+```
+
+NOTE: for python load module in runtime, these libs need to add to ld library path manually
+```
+> sudo vim /etc/ld.so.conf.d/my-mariadb-connector-arm.conf
+> # add /lib/local/mariadb in the text file
+> sudo ldconfig
+
 
 # twtich bot #
 
