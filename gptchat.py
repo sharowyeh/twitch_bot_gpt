@@ -70,7 +70,7 @@ class GPTChat(object):
         self.all_msgs = self.pre_msgs
         self.total_tokens = 0
 
-    def splitText(self, text : str, length=200, delimiters=['. ',': ','; ','. ',' ']):
+    def splitText(self, text : str, length=200, delimiters=['.','. ',':',': ',';','; ',',',', ',' ']):
         """split long text based on my own delimiters prioritization"""
         # NOTE: string module has pre-defined whitespace, punctuation properties but not suitable for my usage
         # primary substring for long text by paragraphs delimiters without whitespace char
