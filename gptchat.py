@@ -70,7 +70,7 @@ class GPTChat(object):
         self.all_msgs = self.pre_msgs
         self.total_tokens = 0
 
-    def splitText(self, text : str, length=200, delimiters=['.','. ',':',': ',';','; ',',',', ',' ']):
+    def splitText(self, text : str, length=200, delimiters=['. ','.',': ',':','; ',';',', ',',',' ']):
         """split long text based on my own delimiters prioritization"""
         # NOTE: string module has pre-defined whitespace, punctuation properties but not suitable for my usage
         # primary substring for long text by paragraphs delimiters without whitespace char
@@ -82,18 +82,21 @@ class GPTChat(object):
                 chunks.append(substring)
             else:
                 index = -1
+                delimiter_len = 1
                 while len(substring) > length:
                     for p in delimiters:
                         index = substring.rfind(p, 0, length)
+                        delimiter_len = len(p)
                         if index > 0:
                             break
                     # edge case if delimiters not found in the given length
                     if index == -1:
                         index = length
+                        delimiter_len = 0
                     # get lengthed sentence to chunks with given punctuation marks(delimiters)
-                    chunks.append(substring[:index+1])
+                    chunks.append(substring[:index+delimiter_len])
                     # reset string for next while loop for next delimiters
-                    substring = substring[index+1:]
+                    substring = substring[index+delimiter_len:]
                 # rest of substring
                 if len(substring) > 0:
                     chunks.append(substring)
