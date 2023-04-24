@@ -83,17 +83,24 @@ NOTE: for python load module in runtime, these libs need to add to ld library pa
 
 # twtich bot #
 
-visit and register for https://dev.twitch.tw/console
+visit and register for https://dev.twitch.tv/console
 
-add application with chat bot, set unique id for user auth page display, client id and secret for oauth usage
+add application with chat bot, set unique id for user auth page display, client id and secret for oauth usage.
+due to the bot is only work for myself, simply set redirect url to localhost.
 
 for authentication, refer https://dev.twitch.tv/docs/irc/authenticate-bot/
 
-since I just test own chat bot, simply use implict flow from example, paste to browser url
+since I just test own chat bot, set simply use implict flow from example, paste to browser url
 
 ```
 https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=<client_id>&redirect_uri=http://localhost&scope=channel%3Amoderate+chat%3Aedit+chat%3Aread&state=c3ab8aa609ea11e793ae92361f002671
 ```
-
 for scopes, refer to https://dev.twitch.tv/docs/authentication/scopes/
 
+token will returned in parameters as below
+```
+http://localhost/#access_token=<token>&scope=channel%3Amoderate+chat%3Aedit+chat%3Aread&state=c3ab8aa609ea11e793ae92361f002671&token_type=bearer
+```
+copy token string to the env variable
+
+also can do this via [twitch cli](https://github.com/twitchdev/twitch-cli/releases) instead of browser
