@@ -19,6 +19,7 @@ services:
       - "3306:3306"
     command: >
       bash -c "
+        cp /home/50-server.cnf /etc/mysql/mariadb.conf.d/ &&
         /etc/init.d/mysql start &&
         mysql -u root -proot < /home/init.sql &&
         mysql -u dev -pdev chatgpt < /home/init-chatgpt.sql &&
